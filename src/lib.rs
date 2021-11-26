@@ -1,10 +1,17 @@
 use std::fs;
 use std::error::Error;
+use std::env;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let content = fs::read_to_string(config.path)?;
+    let contents = fs::read_to_string(config.path)?;
     
-    for line in search(&config.pattern, &content) {
+    let results = if config.case_sensitive {
+        search(&config.pattern, &contents)
+    } else {
+        search_case_insensitive(&config.pattern, &contents)
+    }; 
+
+    for line in results {
         println!("{}", line);
     }
 
@@ -14,6 +21,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 pub struct Config  {
     pub pattern: String,
     pub path: String,
+    pub case_sensitive: bool,
 }
 
 impl Config {
@@ -24,8 +32,9 @@ impl Config {
 
         let pattern = args[1].clone();
         let path = args[2].clone();
+        let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
     
-        Ok(Config { pattern, path })
+        Ok(Config { pattern, path, case_sensitive })
     }
 }
 
